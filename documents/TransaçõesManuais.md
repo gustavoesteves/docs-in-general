@@ -1,0 +1,1 @@
+# Transação Manual (AuthorizationExecute)
