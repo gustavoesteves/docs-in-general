@@ -231,33 +231,441 @@ select
 from PTC_MSS_MDL_REG
 where CD_MDL_ARQ = 803;
 
-insert into PTC_MSS_MDL_CTD_RPT(
-  CD_MDL_CTD_RPT,
+
+-- *************************************************
+-- * Configuração das tabelas de Modelo de Restposta 
+-- * para Distribuição de Crédito: 803
+-- *************************************************
+
+insert into PTC_MSS_MDL_ARQ_RPT(
+  CD_MDL_ARQ_RPT,
+  DS_MDL_ARQ_RPT,
+  CD_MDL_ARQ,
+  CD_STA_CMM,
+  NM_PRC_RPT
+)
+select 
+  CD_MDL_ARQ,
+  DS_MDL_ARQ,
+  CD_MDL_ARQ,
+  CD_STA_CMM,
+  null
+from PTC_MSS_MDL_ARQ
+where CD_MDL_ARQ = 803;
+
+insert into PTC_MSS_MDL_REG_RPT(
   CD_MDL_REG_RPT,
-  NU_POS_INI,
-  NU_POS_FIM,
-  TP_DAD,
-  DS_FMT_DAD,
-  NU_TAM_MAX,
-  NU_PCS,
-  DS_CTD,
-  DS_RTL_CTD,
-  IN_OBR,
-  VL_PDR,
+  CD_MDL_ARQ_RPT,
+  DS_MDL_REG_RPT,
+  NU_ORD_REG,
+  TP_MDL_REG,
+  CD_STA_CMM,
+  CD_MDL_REG,
+  NM_PRC_REG
+)
+select 
+  CD_MDL_REG,
+  CD_MDL_ARQ,
+  DS_MDL_REG,
+  NU_ORD_PRC,
+  TP_MDL_REG,
+  CD_STA_CMM,
+  CD_MDL_REG,
+  null
+from PTC_MSS_MDL_REG
+where CD_MDL_ARQ = 803;
+
+-- Conteudo do arquivo de resposta
+
+-- Header
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
   IN_ERR
 )
-values
-(select 
-  CD_MDL_CTD_RPT,
-  CD_MDL_REG_RPT,
-  NU_POS_INI,
-  NU_POS_FIM,
-  TP_DAD,
-  DS_FMT_DAD,
-  NU_TAM_MAX,
-  NU_PCS,
-  DS_CTD,
-  DS_RTL_CTD,
-  IN_OBR,
-  VL_PDR,
-  IN_ERR)
+select
+  CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD in (333, 334, 335, 336, 337);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  338, 29, 84, 93,
+  'A', null, 10, 0,
+  'DS_ACTION_TYPE', 'ActionType', 'T', null,
+  'F'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  339, 29, 94, 110,
+  'A', null, 17, 0,
+  'FILLER', 'Filler', 'F', null,
+  'F'
+);
+
+--Authentication
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  340, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 339;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  341, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 340;
+
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  342, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 341;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  343, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 342;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  344, 30, 34, 83,
+  'A', null, 50, 0,
+  'MSG_ERROS', 'Erros', 'T', null,
+  'T'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  345, 30, 84, 110,
+  'A', null, 27, 0,
+  'FILLER', 'Filler', 'F', null,
+  'F'
+);
+
+-- Cabecalho do Pedido
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  346, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 344;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  347, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 345;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  348, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 346;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  349, 31, 22, 33,
+  'N', null, 12, 0,
+  'NUM_PEDIDO', 'NumPedido', 'F', null,
+  'F'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  350, 31, 34, 83,
+  'A', null, 50, 0,
+  'MSG_ERROS', 'Erros', 'T', null,
+  'T'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  351, 31, 84, 110,
+  'A', null, 27, 0,
+  'FILLER', 'Filler', 'F', null,
+  'F'
+);
+
+-- Detalhe do Pedido
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  352, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 353;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  353, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 354;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  354, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 355;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  355, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 356;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  356, 32, 41, 52,
+  'N', null, 12, 0,
+  'NUM_PEDIDO', 'NumPedido', 'F', null,
+  'F'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  357, 32, 53, 54,
+  'N', null, 2, 0,
+  'RISK_CONDITION_REASON', 'RiskCondReason', 'F', null,
+  'F'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  358, 32, 55, 104,
+  'A', null, 50, 0,
+  'MSG_ERROS', 'Erros', 'T', null,
+  'T'
+);
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  359, 32, 105, 110,
+  'A', null, 6, 0,
+  'FILLER', 'Filler', 'F', null,
+  'F'
+);
+
+-- Trailer
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  360, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 368;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  361, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 369;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  362, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 370;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  363, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 371;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+)
+select
+  364, CD_MDL_REG, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, null,
+  'F'
+from PTC_MSS_MDL_CTD
+where CD_MDL_CTD = 372;
+
+insert into PTC_MSS_MDL_CTD_RPT(
+  CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
+  TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
+  DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR,
+  IN_ERR
+) values (
+  365, 33, 49, 110,
+  'A', null, 62, 0,
+  'FILLER', 'Filler', 'F', null,
+  'F'
+);
