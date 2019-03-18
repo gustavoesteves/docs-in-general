@@ -309,6 +309,9 @@ CREATE OR REPLACE PACKAGE BODY WTMX_FILEPROCESSOR_PKG IS
     --
   END;
 
+
+
+
   --------------------------------------------------------------------------------
   -- Atualiza status do arquivo
   --------------------------------------------------------------------------------
@@ -734,9 +737,7 @@ CREATE OR REPLACE PACKAGE BODY WTMX_FILEPROCESSOR_PKG IS
                                           pNU_LIN         => vLinha_Autentic,
                                           pCD_STA_PRC_LIN => 9,  -- Erro em transferência
                                           pDT_FIM_PRC_LIN => SYSDATE,
-                                          pVL_MSG_PRC_CTD => 'Transferência não realizada. ERRO ao criar registro para arquivo CMS (1. '|| vMSG_RET ||
-' CD_GST='|| vCD_GST || ' CD_BAS='|| vCD_BAS ||
-' CD_CLI='|| vCD_CLI || ' CD_CSL='|| vCD_CSL || ' CD_USU='|| vCD_USU ||')');
+                                          pVL_MSG_PRC_CTD => 'Transferência não realizada. ERRO ao criar registro para arquivo CMS (1. '|| vMSG_RET ||' CD_GST='|| vCD_GST || ' CD_BAS='|| vCD_BAS ||' CD_CLI='|| vCD_CLI || ' CD_CSL='|| vCD_CSL || ' CD_USU='|| vCD_USU ||')');
                     --
                     -- Atualiza status de processamento do arquivo na interface com a WEM
                     FileStatusUpdate(pCD_ARQ         => rFileRec.CD_ARQ,
@@ -843,9 +844,7 @@ CREATE OR REPLACE PACKAGE BODY WTMX_FILEPROCESSOR_PKG IS
                                         pNU_LIN         => rFileCtd.NU_LIN,
                                         pCD_STA_PRC_LIN => 9,  -- Erro em transferência
                                         pDT_FIM_PRC_LIN => SYSDATE,
-                                        pVL_MSG_PRC_CTD => 'Transferência não realizada. ERRO ao criar registro linha para arquivo CMS'|| vMSG_RET ||' CMS_ARQ = '||vCD_CMS_ARQ||
-' CD_GST='|| vCD_GST || ' CD_BAS='|| vCD_BAS ||
-' CD_CLI='|| vCD_CLI || ' CD_CSL='|| vCD_CSL || ' CD_USU='|| vCD_USU ||')');
+                                        pVL_MSG_PRC_CTD => 'Transferência não realizada. ERRO ao criar registro linha para arquivo CMS'|| vMSG_RET ||' CMS_ARQ = '||vCD_CMS_ARQ||' CD_GST='|| vCD_GST || ' CD_BAS='|| vCD_BAS ||' CD_CLI='|| vCD_CLI || ' CD_CSL='|| vCD_CSL || ' CD_USU='|| vCD_USU ||')');
                   --
                   -- Atualiza status de processamento do arquivo na interface com a WEM
                   FileStatusUpdate(pCD_ARQ         => rFileRec.CD_ARQ,

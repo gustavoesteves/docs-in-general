@@ -265,7 +265,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
                                           pErrorType  => 'EXC',
                                           pErrorLevel => 'REG');   
       END IF;                                    
-      --     
+      --
   END ProcessarRegistro;
   --   
   --

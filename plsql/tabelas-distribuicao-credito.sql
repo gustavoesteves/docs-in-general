@@ -1,54 +1,9 @@
-select 
-    CD_MDL_ARQ,
-    DS_MDL_ARQ,
-    CD_TIP_RPT,
-    MU_MAX_LIN,
-    DS_CAM_UPL,
-    DS_CAM_DNL,
-    VL_LIN_INI,
-    CD_TIP_ARQ,
-    VL_PRI_EXE,
-    NU_EXE_SIM,
-    IN_PMI_AGD,
-    TP_PRC_PDR,
-    IN_AUT_REQ
-from PTC_CMS_MDL_ARQ
+-- New Carga Massiva update
+update TKT_MDL_ARQ_PRC
+set IN_DST_PRC = 'MSS'
+where CD_MDL_ARQ_PRC = 803;
 
-select 
-    IN_TOT_REG,
-    CD_MDL_REG,
-    CD_MDL_ARQ,
-    NU_TAM_MAX,
-    NU_ORD_PRC,
-    DS_MDL_REG,
-    VL_LIN_INI,
-    DS_RTL_MDL_REG
-from PTC_CMS_MDL_REG
-
-select
-    CD_MDL_CTD,
-    CD_MDL_REG,
-    NU_COL_PLN,
-    NU_POS_INI,
-    NU_POS_FIM,
-    TP_DAD,
-    DS_FMT_DAD,
-    NU_TAM_MAX,
-    NU_PCS,
-    DS_CTD,
-    DS_RTL_CTD,
-    NM_FUN_CTD,
-    IN_OBR,
-    VL_PDR,
-    IN_EXB,
-    NM_FUN_VLD,
-    IN_KEY,
-    DS_RTL_CTD_ORG,
-    VL_SEQ_MDL_CTD,
-    IN_CTD_RSP,
-    CD_LST_VLR
-from PTC_CMS_MDL_CTD
-
+-- Modelo do Arquivo de Distribuição de Crédito
 insert into PTC_MSS_MDL_ARQ (
     CD_MDL_ARQ,
     DS_MDL_ARQ,
@@ -83,6 +38,7 @@ select
 from PTC_CMS_MDL_ARQ
 where CD_MDL_ARQ = 803;
 
+-- Modelo dos Registros de Distribuição de Crédito
 insert into PTC_MSS_MDL_REG (
     CD_MDL_REG,
     CD_MDL_ARQ,
@@ -99,6 +55,7 @@ select
 from PTC_CMS_MDL_REG
 where CD_MDL_ARQ = 803;
 
+-- Updates para Registros de Distribuição de Crédito
 -- Header
 update PTC_MSS_MDL_REG
 set ID_CTD_REG = '00', TP_MDL_REG = 'H', 
@@ -111,6 +68,24 @@ set ID_CTD_REG = '01', TP_MDL_REG = 'A',
   NM_PRC_REG = 'WT2MX_MSS_CREDIT_ORDER_PKG.FileAutentication', CD_MDL_REG_PAI = 29
 where CD_MDL_REG = 30;
 
+-- Cabeçalho Pedido
+update PTC_MSS_MDL_REG
+set ID_CTD_REG = '02', TP_MDL_REG = 'D', 
+  NM_PRC_REG = 'WT2MX_MSS_CREDIT_ORDER_PKG.ProcessarCabecalhoPedidoDist', CD_MDL_REG_PAI = 29
+where CD_MDL_REG = 31;
+
+-- Detalhe Pedido
+update PTC_MSS_MDL_REG
+set ID_CTD_REG = '03', TP_MDL_REG = 'D', 
+  NM_PRC_REG = 'WT2MX_MSS_CREDIT_ORDER_PKG.ProcessarDetalheDistribuicao', CD_MDL_REG_PAI = 29
+where CD_MDL_REG = 32;
+
+-- Trailer
+update PTC_MSS_MDL_REG
+set ID_CTD_REG = '04', TP_MDL_REG = 'T'
+where CD_MDL_REG = 32;
+
+-- Modelo do Conteudo de Distribuição de Crédito 
 insert into PTC_MSS_MDL_CTD (
     CD_MDL_CTD,
     CD_MDL_REG,   
@@ -154,6 +129,7 @@ where cd_mdl_reg in (29, 30, 31, 32, 33);
     -- Base = CD_BAS
     -- ActionType = ACTION_TYPE
     -- ProcessType = PROCESS_TYPE
+
 update PTC_MSS_MDL_CTD
 set IN_KEY_VLR = 'REGISTER_TYPE'
 where cd_mdl_reg in (29, 30, 31, 32, 33)
@@ -189,54 +165,12 @@ set IN_KEY_VLR = 'PROCESS_TYPE'
 where cd_mdl_reg in (29, 30, 31, 32, 33)
   and DS_RTL_CTD = 'ProcessType';
 
--- New Carga Massiva update
-update TKT_MDL_ARQ_PRC
-set IN_DST_PRC = 'MSS'
-where CD_MDL_ARQ_PRC = 803 
-
--- Arquivos de resposta
-insert into PTC_MSS_MDL_ARQ_RPT(
-  CD_MDL_ARQ_RPT,
-  DS_MDL_ARQ_RPT,
-  CD_MDL_ARQ,
-  CD_STA_CMM,
-  NM_PRC_RPT
-)
-select 
-  CD_MDL_ARQ, 
-  DS_MDL_ARQ, 
-  CD_MDL_ARQ, 
-  CD_STA_CMM, 
-  null
-from PTC_MSS_MDL_ARQ
-where CD_MDL_ARQ = 803
-
-insert into PTC_MSS_MDL_REG_RPT(
-  CD_MDL_REG_RPT
-  CD_MDL_ARQ_RPT 
-  DS_MDL_REG_RPT
-  NU_ORD_REG     
-  TP_MDL_REG
-  CD_STA_CMM     
-  CD_MDL_REG 
-)
-select 
-  CD_MDL_REG,
-  CD_MDL_ARQ,
-  DS_MDL_REG,
-  NU_ORD_PRC,
-  TP_MDL_REG,
-  CD_STA_CMM,
-  CD_MDL_REG
-from PTC_MSS_MDL_REG
-where CD_MDL_ARQ = 803;
-
-
 -- *************************************************
 -- * Configuração das tabelas de Modelo de Restposta 
 -- * para Distribuição de Crédito: 803
 -- *************************************************
 
+-- Modelo do Arquivo de Resposta de Distribuição de Crédito
 insert into PTC_MSS_MDL_ARQ_RPT(
   CD_MDL_ARQ_RPT,
   DS_MDL_ARQ_RPT,
@@ -253,6 +187,7 @@ select
 from PTC_MSS_MDL_ARQ
 where CD_MDL_ARQ = 803;
 
+-- Modelo dos Registros de Resposta de Distribuição de Crédito
 insert into PTC_MSS_MDL_REG_RPT(
   CD_MDL_REG_RPT,
   CD_MDL_ARQ_RPT,
@@ -275,10 +210,9 @@ select
 from PTC_MSS_MDL_REG
 where CD_MDL_ARQ = 803;
 
--- Conteudo do arquivo de resposta
+-- Modelo dos Registros de Resposta do Conteudo de Distribuição de Crédito
 
 -- Header
-
 insert into PTC_MSS_MDL_CTD_RPT(
   CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
   TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
@@ -318,7 +252,6 @@ insert into PTC_MSS_MDL_CTD_RPT(
 );
 
 --Authentication
-
 insert into PTC_MSS_MDL_CTD_RPT(
   CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
   TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
@@ -401,7 +334,6 @@ insert into PTC_MSS_MDL_CTD_RPT(
 );
 
 -- Cabecalho do Pedido
-
 insert into PTC_MSS_MDL_CTD_RPT(
   CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
   TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
@@ -481,7 +413,6 @@ insert into PTC_MSS_MDL_CTD_RPT(
 );
 
 -- Detalhe do Pedido
-
 insert into PTC_MSS_MDL_CTD_RPT(
   CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
   TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
@@ -587,7 +518,6 @@ insert into PTC_MSS_MDL_CTD_RPT(
 );
 
 -- Trailer
-
 insert into PTC_MSS_MDL_CTD_RPT(
   CD_MDL_CTD_RPT, CD_MDL_REG_RPT, NU_POS_INI, NU_POS_FIM,
   TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS,
