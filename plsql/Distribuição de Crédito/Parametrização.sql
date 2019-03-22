@@ -17,7 +17,7 @@ insert into MX_ADM.PTC_MSS_MDL_REG(CD_MDL_REG, CD_MDL_ARQ, NU_TAM_MAX, NU_ORD_PR
 values (31, 803, 600, 3, 'Detalhe 02 - Cabeçalho Pedido', '02', 'D', 'WT2MX_MSS_CREDIT_ORDER_PKG.ProcessarCabecalhoPedidoDistribuicao', 1, 29);
 
 insert into MX_ADM.PTC_MSS_MDL_REG(CD_MDL_REG, CD_MDL_ARQ, NU_TAM_MAX, NU_ORD_PRC, DS_MDL_REG, ID_CTD_REG, TP_MDL_REG, NM_PRC_REG, CD_STA_CMM, CD_MDL_REG_PAI)
-values (32, 803, 600, 4, 'Detalhe 03 - Distribuição aos Cartões', '03', 'D', 'WT2MX_MSS_CREDIT_ORDER_PKG.ProcessarDetalheDistribuicao', 1, 29);
+values (32, 803, 600, 4, 'Detalhe 03 - Distribuição aos Cartões', '03', 'D', 'WT2MX_MSS_CREDIT_ORDER_PKG.ProcessarDetalheDistribuicao', 1, 31);
 
 insert into MX_ADM.PTC_MSS_MDL_REG(CD_MDL_REG, CD_MDL_ARQ, NU_TAM_MAX, NU_ORD_PRC, DS_MDL_REG, ID_CTD_REG, TP_MDL_REG, NM_PRC_REG, CD_STA_CMM, CD_MDL_REG_PAI)
 values (33, 803, 600, 5, 'Trailer', '99', 'T', null, 1, null);
@@ -145,21 +145,6 @@ values (372, 33, 34, 48, 'N', null, 15, 0, 'CT_REGISTROS', 'QtdeRegistros', 'T',
 
 insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
 values (373, 33, 49, 600, 'C', null, 552, 0, 'FILLER', 'Filler', 'F', null, null, null);
-
-insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
-values (426, 30, null, null, 'N', null, 12, 0, 'Contrato (calculado)', 'Contrato', 'F', null, null, null);
-
-insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
-values (427, 30, null, null, 'N', null, 6, 0, 'Linha de Crédito (calculado)', 'LinhaCredito', 'F', null, null, null);
-
-insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
-values (428, 30, null, null, 'N', null, 12, 0, 'Usuário do Gestor (calculado)', 'UsuarioGestor', 'F', null, null, null);
-
-insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
-values (525, 32, null, null, 'N', null, 6, 0, 'Moeda (calculado)', 'Moeda', 'F', null, null, null);
-
-insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
-values (526, 32, null, null, 'N', null, 12, null, 'Portador (calculado)', 'Portador', 'F', null, null, null);
 
 insert into MX_ADM.PTC_MSS_MDL_CTD(CD_MDL_CTD, CD_MDL_REG, NU_POS_INI, NU_POS_FIM, TP_DAD, DS_FMT_DAD, NU_TAM_MAX, NU_PCS, DS_CTD, DS_RTL_CTD, IN_OBR, VL_PDR, CD_LST_VLR, IN_KEY_VLR)
 values (706, 30, 34, 34, 'C', null, 1, 0, 'ACTION_TYPE', 'ActionType', 'F', null, null, 'ACTION_TYPE');

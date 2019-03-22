@@ -37,6 +37,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   vNU_PED         PTC_PED_CAT.NU_PED%TYPE;
   vCD_CIC_APU     PTC_CIC_APU.CD_CIC_APU%TYPE;
   VCD_TIP_ETD     PTC_ETD.CD_TIP_ETD%TYPE;
+  vProductCreditLineTypeID PTC_TIP_LIN_SNN.CD_TIP_LIN_CDT%TYPE;
   --
   vKM_Quantity PTC_GPO_DST_CRD_PTD.QT_KM%TYPE;  -- 1.14
   vNU_RND      PTC_GPO_DST_CRD_PTD.NU_RND%TYPE; -- 1.14   
@@ -65,7 +66,8 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   -- *********************
   -- *  METHODS          *
   -- *********************
-
+  --
+  --
   ----------------------------------------------------------
   -- Procedure Especialista - Valida o cartão ativo 
   -- 1.25 
@@ -185,6 +187,190 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   END GetCardFromTagNFC;
   --
   --
+  ----------------------------------------------------------------------------------------
+  -- Retorna o ProductCreditLineType ID a partir do Codigo da Base
+  ----------------------------------------------------------------------------------------
+  FUNCTION GetProdCreditLineFromCorpLevel(PLabelCorpLevel IN VARCHAR2) RETURN NUMBER IS
+    --
+    vResult PTC_PDT_SVC_LIN_CDT_SNN.CD_PDT_LIN_CRD%TYPE;
+    --
+  BEGIN
+    --
+    DBMS_APPLICATION_INFO.READ_MODULE(vModule, vAction);
+    DBMS_APPLICATION_INFO.SET_MODULE($$PLSQL_UNIT, 'GetProdCreditLineFromCorpLevel');
+    --                                                     
+    BEGIN
+      --
+      SELECT PSLCS.CD_PDT_LIN_CRD
+        INTO vResult
+      FROM PTC_BAS B, PTC_PDT_SVC_LIN_CDT_SNN PSLCS 
+       WHERE B.CD_BAS = PLabelCorpLevel
+         AND B.CD_MDL_FAT = PSLCS.CD_MDL_FAT;        
+      --
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        --
+        vResult := NULL;
+        --
+    END;
+    --
+    DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
+    --
+    RETURN vResult;
+    --
+  END GetProdCreditLineFromCorpLevel;
+  --
+  --
+  ----------------------------------------------------------------------------------------
+  -- Retorna o Valor total do pedido
+  ----------------------------------------------------------------------------------------
+  FUNCTION GetValorTotalPedido RETURN NUMBER IS
+    --
+    vResult NUMBER;
+    --
+  BEGIN
+    --
+    DBMS_APPLICATION_INFO.READ_MODULE(vModule, vAction);
+    DBMS_APPLICATION_INFO.SET_MODULE($$PLSQL_UNIT, 'GetValorTotalPedido');
+    --                                                     
+    BEGIN
+      SELECT SUM(MSS_CTD.VL_CTD)
+        INTO vResult
+      FROM PTC_MSS_CTD MSS_CTD
+        INNER JOIN PTC_MSS_MDL_CTD MDL_CTD ON MDL_CTD.CD_MDL_CTD = MSS_CTD.CD_MDL_CTD
+        INNER JOIN PTC_MSS_REG MSS_REG ON MSS_CTD.NU_REG = MSS_REG.NU_REG
+      WHERE MDL_CTD.DS_CTD = 'VALUE'
+        AND MDL_CTD.CD_MDL_REG IN (
+          SELECT CD_MDL_REG
+          FROM PTC_MSS_MDL_REG
+          WHERE CD_MDL_ARQ = 803
+        )
+        AND MSS_REG.CD_ARQ = WT2MX_MASSIVELOAD_MNG.gFile.CD_ARQ;
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        --
+        vResult := NULL;
+    --
+    END;
+    --
+    DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
+    --
+    RETURN vResult;
+    --
+  END GetValorTotalPedido;
+  --
+  --
+  ----------------------------------------------------
+  -- Retorna a linha de crédito a ser utilizada
+  ----------------------------------------------------
+  FUNCTION GetCreditLineFromCorpLevel RETURN NUMBER IS
+    --
+    vCreditLine NUMBER;
+    --
+  BEGIN
+    --
+    DBMS_APPLICATION_INFO.READ_MODULE(vModule, vAction);
+    DBMS_APPLICATION_INFO.SET_MODULE($$PLSQL_UNIT, 'GetCreditLineFromCorpLevel');
+    --                                                     
+    BEGIN
+      SELECT DISTINCT (PSLCS.CD_TIP_LIN_CDT)
+        INTO vCreditLine
+      FROM PTC_BAS                        BAS,
+           PTC_NIV_CTR_ITE_SVC_PTE_NEG    NCISPN,
+           PTC_PDT_SVC_LIN_CDT_SNN        PSLCS
+      WHERE BAS.CD_PTE_NEG    = NCISPN.CD_PTE_NEG
+        AND NCISPN.CD_ITE_SVC = NCISPN.CD_SVC
+        AND NCISPN.CD_SVC     = PSLCS.CD_SVC
+        AND BAS.CD_MDL_FAT    = PSLCS.CD_MDL_FAT
+        AND BAS.CD_BAS        = vCD_BAS
+        AND ROWNUM = 1;
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        --
+        vCreditLine := NULL;
+        --
+    END;
+    --
+    DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
+    --
+    RETURN vCreditLine;
+    --
+  END GetCreditLineFromCorpLevel;
+  --
+  --
+  ----------------------------------------------------------------------------------------
+  -- Retorna o Codigo do Usuario a partir do Codigo do Gestor
+  ----------------------------------------------------------------------------------------
+  FUNCTION GetUserFromManager RETURN NUMBER IS
+    --
+    vUser             PTC_GST.CD_USU%TYPE;
+    --
+  BEGIN
+    --
+    DBMS_APPLICATION_INFO.READ_MODULE(vModule, vAction);
+    DBMS_APPLICATION_INFO.SET_MODULE($$PLSQL_UNIT, 'GetUserFromManager');
+    --
+    BEGIN
+      --
+      SELECT MAX(G.CD_USU)
+        INTO vUser
+        FROM PTC_GST G,
+             PTC_BAS B, 
+             PTC_CLI C 
+       WHERE B.CD_BAS = vCD_BAS 
+         AND B.CD_CLI = C.CD_CLI 
+         AND C.CD_CSL = G.CD_CSL 
+         AND G.CD_GST = vCD_GST;
+      --
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        --
+        vUser := NULL;
+        --
+    END;
+    --
+    DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
+    --
+    RETURN vUser;
+    --
+  END GetUserFromManager;
+  --
+  --
+  ----------------------------------------------------------------------------------------
+  -- Retorna o Codigo do Contrato Cliente a partir do Codigo da Base
+  ----------------------------------------------------------------------------------------
+  FUNCTION GetContractIDFromCL RETURN NUMBER IS
+    --
+    vClientContract   PTC_CTR_CLI.CD_CTR_CLI%TYPE;
+    --
+  BEGIN
+    --
+    DBMS_APPLICATION_INFO.READ_MODULE(vModule, vAction);
+    DBMS_APPLICATION_INFO.SET_MODULE($$PLSQL_UNIT, 'GetContractIDFromCL');
+    --
+    BEGIN
+      --
+      SELECT CC.CD_CTR_CLI
+        INTO vClientContract
+        FROM PTC_BAS     BAS,
+             PTC_CTR_CLI CC
+       WHERE BAS.CD_CLI = CC.CD_CLI
+         AND BAS.CD_BAS = vCD_BAS;
+      --
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        --
+        vClientContract := NULL;
+        --
+    END;
+    --
+    DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
+    --
+    RETURN vClientContract;
+    --
+  END GetContractIDFromCL;
+  --
+  --
   ----------------------------------------------------
   -- Procedure processamento da(s) linha(s) de detalhe do pedido de distribuição
   ----------------------------------------------------
@@ -195,7 +381,19 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     vUserMessage   VARCHAR2(1000);
     vReturnCode    NUMBER;
     vReturnMessage VARCHAR2(1000);
-    --     
+    vMessageType  VARCHAR2(500);
+    vItemIndex    INT;
+    --
+    vCD_PDT_LIN_CRD PTC_PDT_SVC_LIN_CDT_SNN.CD_PDT_LIN_CRD%TYPE;
+    vCUR_ERR  T_CURSOR;
+    --
+    vNU_TRF_SNN NUMBER;
+    vVL_SLD_BAS NUMBER;
+    vCUR_OUT T_CURSOR;
+    vCOD_RET NUMBER;
+    vTP_ACA VARCHAR2(100);
+    vVL_TOT_PED NUMBER;
+    --
   BEGIN
     --
     IF NVL(vFinancialInd, 'F') = 'T' THEN
@@ -233,18 +431,167 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       --
     END IF;
     --
+    IF WT2MX_MASSIVELOAD_MNG.gFile.TP_ACA = 'V' THEN
+      vTP_ACA := 'VALIDATE';
+    ELSE
+      vTP_ACA := 'APPLY';
+    END IF; 
     --
-    -- Associar pedido ao arquivo
+    vVL_TOT_PED := GetValorTotalPedido();
     --
-    vTrack:= 'adicionar campos retornados das rotinas dbapi';
-    --
-    WT2MX_MASSIVELOAD_MNG.AddFieldResponse(PNU_REG     => WT2MX_MASSIVELOAD_MNG.gValores('NU_REG_MASTER').NumberValue, 
-                                           PDS_RTL_CTD => 'NU_PED', 
-                                           PCONTEUDO   => WT2MX_MASSIVELOAD_MNG.gValores('NU_PED').NumberValue);
-    --    
-    WT2MX_MASSIVELOAD_MNG.AddFieldResponse(PNU_REG     => WT2MX_MASSIVELOAD_MNG.gValores('NU_REG_MASTER').NumberValue, 
-                                           PDS_RTL_CTD => 'CD_PAT', 
-                                           PCONTEUDO   => WT2MX_MASSIVELOAD_MNG.gValores('CD_PAT').NumberValue);
+    IF vCD_TIP_PED = 11 THEN
+      --
+      --
+      -- Criando Pedido para base e distribuição de crédito
+      --
+      vTrack := 'WT2MX_SNN_ACCOUNTCORPLEVEL_INT.OrderCreditCorpLevelAcct()';
+      --
+      vCD_PDT_LIN_CRD := GetProdCreditLineFromCorpLevel(vCD_BAS);
+      --
+      WT2MX_SNN_ACCOUNTCORPLEVEL_INT.OrderCreditCorpLevelAcct(
+        pCD_GST         => vCD_GST,
+        pNU_CTR         => vContrato,
+        pNU_PED         => vNU_PED,
+        pNU_PED_EXT     => vExtPed,
+        pDT_AGD         => vDt_Agd,
+        pCD_MOE         => vCurrency,
+        pCD_PDT_LIN_CRD => vCD_PDT_LIN_CRD,
+        pDS_PRI         => 'NORMAL',
+        pCD_BAS         => vCD_BAS,
+        pVL_PED_BAS     => vVL_PED_FIN_BAS,
+        pID_MSG         => NULL,
+        pID_REQ         => NULL,
+        pCOD_RET        => vReturnCode,
+        CUR_ERR         => vCUR_ERR
+      );
+      --
+      IF NVL(vReturnCode,0) <> 0 THEN
+        -- validar cursor de erros
+        FETCH vCUR_ERR INTO vUserMessage, vMessageType, vReturnMessage, vItemIndex;
+        --
+        vReturnCode:= NVL(WTMX_UTILITY_PKG.GetSunnelError(vReturnMessage, 18), 2109);
+
+        CLOSE vCUR_ERR;
+        --      
+        RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
+        --
+      END IF;
+      --
+      vTrack := 'WT2MX_SNN_ACCOUNTCORPLEVEL_INT.DistribToCardHoldersCustMngr()';
+      --
+      WT2MX_SNN_ACCOUNTCORPLEVEL_INT.DistribToCardHoldersCustMngr(
+        pCD_GST         => vCD_GST,
+        pCD_CTR_CLI     => vContrato,
+        pCD_BAS         => vCD_BAS,
+        pCD_TP_LIN_CRD  => vProductCreditLineTypeID,
+        pDT_AGD         => vDt_Agd,
+        pCD_MOE         => vCurrency,
+        pTP_ACA         => vTP_ACA,
+        pVL_TOT_PED     => vVL_TOT_PED,
+        pNU_PED         => vNU_PED,
+        pNU_PED_EXT     => vExtPed,
+        pVL_PED_BAS     => vVL_PED_FIN_BAS,
+        pCardHolderList => vItemDist,
+        pID_MSG         => NULL,
+        pID_REQ         => NULL,
+        pNU_TRF_SNN     => vNU_TRF_SNN,
+        pVL_SLD_BAS     => vVL_SLD_BAS,
+        CUR_OUT         => vCUR_OUT,
+        pCOD_RET        => vCOD_RET,
+        CUR_ERR         => vCUR_ERR
+      );
+      --
+      IF NVL(vReturnCode,0) <> 0 THEN
+        -- validar cursor de erros
+        FETCH vCUR_ERR INTO vUserMessage, vMessageType, vReturnMessage, vItemIndex;
+        --
+        vReturnCode:= NVL(WTMX_UTILITY_PKG.GetSunnelError(vReturnMessage, 18), 2109);
+
+        CLOSE vCUR_ERR;
+        --      
+        RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
+        --
+      END IF;
+      --
+    ELSIF vCD_TIP_PED = 2 THEN
+      --
+      --
+      -- Criando Distribuição de crédito
+      --
+      vTrack := 'WT2MX_SNN_ACCOUNTCORPLEVEL_INT.DistribToCardHoldersCustMngr()';
+      --
+      WT2MX_SNN_ACCOUNTCORPLEVEL_INT.DistribToCardHoldersCustMngr(
+        pCD_GST         => vCD_GST,
+        pCD_CTR_CLI     => vContrato,
+        pCD_BAS         => vCD_BAS,
+        pCD_TP_LIN_CRD  => vProductCreditLineTypeID,
+        pDT_AGD         => vDt_Agd,
+        pCD_MOE         => vCurrency,
+        pTP_ACA         => vTP_ACA,
+        pVL_TOT_PED     => vVL_TOT_PED,
+        pNU_PED         => vNU_PED,
+        pNU_PED_EXT     => vExtPed,
+        pVL_PED_BAS     => vVL_PED_FIN_BAS,
+        pCardHolderList => vItemDist,
+        pID_MSG         => NULL,
+        pID_REQ         => NULL,
+        pNU_TRF_SNN     => vNU_TRF_SNN,
+        pVL_SLD_BAS     => vVL_SLD_BAS,
+        CUR_OUT         => vCUR_OUT,
+        pCOD_RET        => vCOD_RET,
+        CUR_ERR         => vCUR_ERR
+      );
+      --
+      IF NVL(vReturnCode,0) <> 0 THEN
+        -- validar cursor de erros
+        FETCH vCUR_ERR INTO vUserMessage, vMessageType, vReturnMessage, vItemIndex;
+        --
+        vReturnCode:= NVL(WTMX_UTILITY_PKG.GetSunnelError(vReturnMessage, 18), 2109);
+
+        CLOSE vCUR_ERR;
+        --      
+        RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
+        --
+      END IF;
+      --      
+    ELSIF vCD_TIP_PED = 12 THEN  
+      --
+      --
+      -- Criando Recolhimento
+      --
+      vTrack := 'WT2MX_SNN_ACCOUNTCORPLEVEL_INT.CrDistributionToCorpLevelAcc()';
+      --
+      WT2MX_SNN_ACCOUNTCORPLEVEL_INT.CrDistributionToCorpLevelAcc(
+        pCD_GST         => vCD_GST,
+        pCD_CTR_CLI     => vContrato,
+        pCD_BAS         => vCD_BAS,
+        pCD_TP_LIN_CRD  => vProductCreditLineTypeID,
+        pDT_AGD         => vDt_Agd,
+        pCD_MOE         => vCurrency,
+        pTP_ACA         => vTP_ACA,
+        pVL_TOT_PED     => vVL_TOT_PED,
+        pNU_PED         => vNU_PED,
+        pCardHolderList => vItemDist,
+        pNU_TRF_SNN     => vNU_TRF_SNN,
+        pVL_SLD_BAS     => vVL_SLD_BAS,
+        CUR_OUT         => vCUR_OUT,
+        pCOD_RET        => vCOD_RET,
+        CUR_ERR         => vCUR_ERR
+      );
+      --
+      IF NVL(vReturnCode,0) <> 0 THEN
+        -- validar cursor de erros
+        FETCH vCUR_ERR INTO vUserMessage, vMessageType, vReturnMessage, vItemIndex;
+        --
+        vReturnCode:= NVL(WTMX_UTILITY_PKG.GetSunnelError(vReturnMessage, 18), 2109);
+
+        CLOSE vCUR_ERR;
+        --      
+        RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
+        --
+      END IF;
+      --    
+    END IF;
     --
     --    
   EXCEPTION
@@ -254,16 +601,20 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
       --
       IF NVL(vReturnCode, 0) <> 0 THEN
-         WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode  => vReturnCode, 
-                                     pErrorMessage => vReturnMessage,
-                                     pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
-                                     pErrorType  => 'ERR',
-                                     pErrorLevel => 'REG');  
+         WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode  => vReturnCode, 
+          pErrorMessage => vReturnMessage,
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
+          pErrorType  => 'ERR',
+          pErrorLevel => 'REG'
+        );  
       ELSE                                   
-        WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode   => 182190, 
-                                          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
-                                          pErrorType  => 'EXC',
-                                          pErrorLevel => 'REG');   
+        WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode   => 182190, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
+          pErrorType  => 'EXC',
+          pErrorLevel => 'REG'
+        );   
       END IF;                                    
       --
   END ProcessarRegistro;
@@ -301,15 +652,19 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
       --
       IF NVL(vReturnCode,0) <> 0 THEN
-         WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode  => vReturnCode, 
-                                     pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
-                                     pErrorType  => 'ERR',
-                                     pErrorLevel => 'ARQ');  
+         WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode  => vReturnCode, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
+          pErrorType  => 'ERR',
+          pErrorLevel => 'ARQ'
+        );  
       ELSE                                   
-        WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode   => 182548, 
-                                          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
-                                          pErrorType  => 'EXC',
-                                          pErrorLevel => 'ARQ');   
+        WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode   => 182548, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
+          pErrorType  => 'EXC',
+          pErrorLevel => 'ARQ'
+        );   
       END IF;                                    
       --
   END FileHeader;
@@ -334,7 +689,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     --
     vCD_GST := WT2MX_MASSIVELOAD_MNG.gValores('Manager').NumberValue;
     vCD_BAS := WT2MX_MASSIVELOAD_MNG.gValores('Base').NumberValue;
-    vCreditLineType := WT2MX_MASSIVELOAD_MNG.gValores('LinhaCredito').NumberValue;
+    vCreditLineType := GetCreditLineFromCorpLevel;
     --
     -- Verificac?o da Abrangencia do Gestor
     --
@@ -361,8 +716,8 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     END IF;
     --
     --
-    vCD_USU_SOL := WT2MX_MASSIVELOAD_MNG.gValores('UsuarioGestor').NumberValue;
-    vContrato := WT2MX_MASSIVELOAD_MNG.gValores('Contrato').NumberValue;
+    vCD_USU_SOL := GetUserFromManager;
+    vContrato := GetContractIDFromCL;
     --             
     DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
     --
@@ -372,15 +727,19 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
       --
       IF NVL(vReturnCode,  0) <> 0 THEN
-         WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode  => vReturnCode, 
-                                     pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
-                                     pErrorType  => 'ERR',
-                                     pErrorLevel => 'ARQ');  
+         WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode  => vReturnCode, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
+          pErrorType  => 'ERR',
+          pErrorLevel => 'ARQ'
+        );  
       ELSE                                   
-        WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode   => 182190, 
-                                          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
-                                          pErrorType  => 'EXC',
-                                          pErrorLevel => 'ARQ');   
+        WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode   => 182190, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
+          pErrorType  => 'EXC',
+          pErrorLevel => 'ARQ'
+        );   
       END IF;                                    
       -- 
   END FileAutentication;
@@ -406,7 +765,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     vVL_PED_FIN_BAS := WT2MX_MASSIVELOAD_MNG.gValores('ValorPedido').NumberValue;
     vQT_ITE_PED := WT2MX_MASSIVELOAD_MNG.gValores('QtdItens').NumberValue;
 
-    vCD_TIP_PED := WT2MX_MASSIVELOAD_MNG.gValores('IndPedCredito').NumberValue;
+    vCD_TIP_PED := WT2MX_MASSIVELOAD_MNG.gValores('IndPedCredito').StringValue;
 
     IF vCD_TIP_PED = 1 THEN
       vCD_TIP_PED := 11; -- Pedido para base e distribuic?o de credito
@@ -424,15 +783,19 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
       --
       IF NVL(vReturnCode,  0) <> 0 THEN
-         WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode  => vReturnCode, 
-                                     pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
-                                     pErrorType  => 'ERR',
-                                     pErrorLevel => 'ARQ');  
+         WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode  => vReturnCode, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
+          pErrorType  => 'ERR',
+          pErrorLevel => 'ARQ'
+        );  
       ELSE                                   
-        WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode   => 182190, 
-                                          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
-                                          pErrorType  => 'EXC',
-                                          pErrorLevel => 'ARQ');   
+        WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode   => 182190, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
+          pErrorType  => 'EXC',
+          pErrorLevel => 'ARQ'
+        );   
       END IF;                                    
       --   
   END ProcessarCabecalhoPedidoDist;
@@ -604,15 +967,15 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       vExpirationDate := WT2MX_MASSIVELOAD_MNG.gValores('DtExpiracao').DateValue;
       vCardBalance := WT2MX_MASSIVELOAD_MNG.gValores('SaldoCartao').NumberValue;
       vRoute := WT2MX_MASSIVELOAD_MNG.gValores('Rota').StringValue;
-      vCurrency := WT2MX_MASSIVELOAD_MNG.gValores('Moeda').NumberValue;
+      vCurrency := WTMX_MASSIVELOAD_PKG.GetCurrencyIDParameter();
       --vCardHolder := WTMX_MASSIVELOAD_PKG.GetContentNumber('Portador', WTMX_MASSIVELOAD_PKG.vLines(WT_MASSIVELOAD_PKG.gFile.NU_REG)); -- 1.2
       --
       -- 1.22 inicio
       BEGIN
         SELECT CAT.CD_PTD
           INTO vCardHolder
-          FROM PTC_CAT  CAT
-          WHERE CAT.NU_CAT = TRIM(vCard);
+        FROM PTC_CAT  CAT
+        WHERE CAT.NU_CAT = TRIM(vCard);
       EXCEPTION
         WHEN NO_DATA_FOUND THEN
           --
@@ -652,8 +1015,8 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       IF vMerchandise IS NOT NULL THEN -- 1.01
         SELECT M.CD_UND_MRD
           INTO vMerchUnit
-          FROM PTC_MRD M
-          WHERE M.CD_MRD = vMerchandise;
+        FROM PTC_MRD M
+        WHERE M.CD_MRD = vMerchandise;
       ELSE
         vMerchUnit:= NULL;   
       END IF; 
@@ -705,15 +1068,19 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       DBMS_APPLICATION_INFO.SET_MODULE(vModule, vAction);
       --
       IF NVL(vReturnCode,0) <> 0 THEN
-         WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode  => vReturnCode, 
-                                     pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
-                                     pErrorType  => 'ERR',
-                                     pErrorLevel => 'ARQ');  
+         WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode  => vReturnCode, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||NVL(vUserMessage, vReturnCode), 
+          pErrorType  => 'ERR',
+          pErrorLevel => 'ARQ'
+        );
       ELSE                                   
-        WT2MX_MASSIVELOAD_MNG.ProcessError(pErrorCode   => 182190, 
-                                          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
-                                          pErrorType  => 'EXC',
-                                          pErrorLevel => 'ARQ');   
+        WT2MX_MASSIVELOAD_MNG.ProcessError(
+          pErrorCode   => 182190, 
+          pAuxMessage => 'Erro ao ' || vTrack ||': ' ||SQLERRM, 
+          pErrorType  => 'EXC',
+          pErrorLevel => 'ARQ'
+        );   
       END IF;                                    
       -- 
   END ProcessarDetalheDistribuicao;
