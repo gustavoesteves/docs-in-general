@@ -1,4 +1,4 @@
-CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
+CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
   -- *********************
   -- * INTERNAL TYPES    *
   -- *********************
@@ -31,22 +31,22 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   vVL_PED_FIN_BAS PTC_PED_FIN_BAS.VL_PED_FIN_BAS%TYPE;
   vQT_ITE_PED     PTC_ITE_PED.QT_ITE_PED%TYPE;
   vCD_TIP_PED     PTC_PED_CAT.CD_TIP_PED%TYPE;
-  vTagNfcNum      PTC_DAD_VEI_EQP.NU_TAG_NFC%TYPE; -- 1.25  VARCHAR2(20); -- 1.22
+  vTagNfcNum      PTC_DAD_VEI_EQP.NU_TAG_NFC%TYPE;
   vCardType       PTC_CAT.CD_TIP_CAT%TYPE;
   vCardStatus     PTC_CAT.CD_STA_CAT%TYPE;
   vNU_PED         PTC_PED_CAT.NU_PED%TYPE;
   vCD_CIC_APU     PTC_CIC_APU.CD_CIC_APU%TYPE;
   VCD_TIP_ETD     PTC_ETD.CD_TIP_ETD%TYPE;
-  vProductCreditLineTypeID PTC_TIP_LIN_SNN.CD_TIP_LIN_CDT%TYPE;
   --
-  vKM_Quantity PTC_GPO_DST_CRD_PTD.QT_KM%TYPE;  -- 1.14
-  vNU_RND      PTC_GPO_DST_CRD_PTD.NU_RND%TYPE; -- 1.14   
+  vKM_Quantity PTC_GPO_DST_CRD_PTD.QT_KM%TYPE;
+  vNU_RND      PTC_GPO_DST_CRD_PTD.NU_RND%TYPE;   
   --
   vCard              VARCHAR2(20);
-  vTagNfcId          VARCHAR2(20); -- 1.22
+  vTagNfcId          VARCHAR2(20);
   vValue             NUMBER;
   vCreditType        NUMBER;
   vItemDist          CLOB;
+  vCardHolderList    CLOB;
   vCardOperationList RCurCardOperationCardList;
   vOperationClass    VARCHAR2(20);
   vFinancialInd      VARCHAR2(1);
@@ -68,15 +68,15 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   -- *********************
   --
   --
-  ----------------------------------------------------------
-  -- Procedure Especialista - Valida o cartão ativo 
-  -- 1.25 
-  ----------------------------------------------------------
-  PROCEDURE GetCardFromTagNFC ( PNU_CARD    IN  OUT    PTC_CAT.NU_CAT%TYPE,
-                                PID_TAG_NFC IN         PTC_DAD_VEI_EQP.ID_TAG_NFC%TYPE,
-                                PNU_TAG_NFC IN         PTC_DAD_VEI_EQP.NU_TAG_NFC%TYPE,
-                                pCOD_RET    OUT NOCOPY NUMBER
-                              ) IS
+  ----------------------------------------------------------------------------------------
+  -- Procedure Especialista - Valida o cartao ativo
+  ----------------------------------------------------------------------------------------
+  PROCEDURE GetCardFromTagNFC( 
+    PNU_CARD    IN  OUT    PTC_CAT.NU_CAT%TYPE,
+    PID_TAG_NFC IN         PTC_DAD_VEI_EQP.ID_TAG_NFC%TYPE,
+    PNU_TAG_NFC IN         PTC_DAD_VEI_EQP.NU_TAG_NFC%TYPE,
+    pCOD_RET    OUT NOCOPY NUMBER
+  ) IS
    --
    vCard              PTC_CAT.NU_CAT%TYPE;                 
    vIdTagNfc          PTC_DAD_VEI_EQP.ID_TAG_NFC%TYPE;
@@ -86,7 +86,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
    --
   BEGIN
     --
-    IF PNU_CARD IS NOT NULL THEN   -- Validação do cartão
+    IF PNU_CARD IS NOT NULL THEN   -- Validacao do cartao
       --
       BEGIN
           SELECT CAT.NU_CAT, DVE.ID_TAG_NFC, DVE.NU_TAG_NFC
@@ -101,10 +101,10 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
             AND DVE.CD_VEI_EQP = VEI.CD_VEI_EQP;   
         EXCEPTION
           WHEN NO_DATA_FOUND THEN 
-            pCOD_RET    := 183143;  -- Could not find Card Number
+            pCOD_RET := 183143;  -- Could not find Card Number
             RETURN;           
           WHEN OTHERS THEN 
-            pCOD_RET    := 182190;  -- Internal error.
+            pCOD_RET := 182190;  -- Internal error
             RETURN;
             --
       END;
@@ -112,16 +112,16 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       -- Validar a TAG HEX, quando fornecido
       IF NVL(PID_TAG_NFC,vIdTagNfc) <> vIdTagNfc OR
         (vIdTagNfc IS NULL  AND PID_TAG_NFC IS NOT NULL)  THEN
-          pCOD_RET    := 183156;  -- The hexadecimal tag is different from the one registered for the vehicle / card provided
+          pCOD_RET := 183156;  -- The hexadecimal tag is different from the one registered for the vehicle / card provided
           RETURN;
       END IF;
       --
       IF NVL(PNU_TAG_NFC,vNuTagNfc) <> vNuTagNfc  THEN
-          pCOD_RET    := 183157;     -- Could not found Vehicle with numerical TAG informed.
+          pCOD_RET := 183157;  -- Could not found Vehicle with numerical TAG informed.
           RETURN;
       END IF;
       --                
-    ELSIF PID_TAG_NFC IS NOT NULL THEN        -- TAG Hexadecimal        
+    ELSIF PID_TAG_NFC IS NOT NULL THEN -- TAG Hexadecimal        
       --
       BEGIN -- Validacao da TAG Hexadecimal 
           SELECT CAT.NU_CAT, DVE.NU_TAG_NFC
@@ -138,20 +138,20 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
           --
       EXCEPTION
         WHEN NO_DATA_FOUND THEN
-          pCOD_RET    := 183156;  -- Could not found Vehicle with hexadecimal TAG informed.
+          pCOD_RET := 183156;  -- Could not found Vehicle with hexadecimal TAG informed.
           RETURN;
         WHEN OTHERS THEN 
-          pCOD_RET    := 182190;  -- Internal error.
+          pCOD_RET := 182190;  -- Internal error.
           RETURN;
-      END; -- 1.25 
+      END;
       -- 
       IF NVL(PNU_TAG_NFC,vNuTagNfc) <> vNuTagNfc  THEN
-          pCOD_RET    := 183157;     -- Could not found Vehicle with numerical TAG informed.
+          pCOD_RET := 183157; -- Could not found Vehicle with numerical TAG informed.
           RETURN;
       END IF;
-    ELSIF PNU_TAG_NFC IS NOT NULL THEN      -- TAG Numerica          
+    ELSIF PNU_TAG_NFC IS NOT NULL THEN -- TAG Numerica          
       --
-      BEGIN -- Validação da TAG Numerica 
+      BEGIN -- Validacao da TAG Numerica 
           SELECT CAT.NU_CAT
             INTO vCard
             FROM PTC_DAD_VEI_EQP DVE, 
@@ -238,14 +238,8 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         INTO vResult
       FROM PTC_MSS_CTD MSS_CTD
         INNER JOIN PTC_MSS_MDL_CTD MDL_CTD ON MDL_CTD.CD_MDL_CTD = MSS_CTD.CD_MDL_CTD
-        INNER JOIN PTC_MSS_REG MSS_REG ON MSS_CTD.NU_REG = MSS_REG.NU_REG
       WHERE MDL_CTD.DS_CTD = 'VALUE'
-        AND MDL_CTD.CD_MDL_REG IN (
-          SELECT CD_MDL_REG
-          FROM PTC_MSS_MDL_REG
-          WHERE CD_MDL_ARQ = 803
-        )
-        AND MSS_REG.CD_ARQ = WT2MX_MASSIVELOAD_MNG.gFile.CD_ARQ;
+      AND MSS_CTD.CD_ARQ = WT2MX_MASSIVELOAD_MNG.gFile.CD_ARQ;
     EXCEPTION
       WHEN NO_DATA_FOUND THEN
         --
@@ -260,9 +254,9 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   END GetValorTotalPedido;
   --
   --
-  ----------------------------------------------------
-  -- Retorna a linha de crédito a ser utilizada
-  ----------------------------------------------------
+  ----------------------------------------------------------------------------------------
+  -- Retorna a linha de credito a ser utilizada
+  ----------------------------------------------------------------------------------------
   FUNCTION GetCreditLineFromCorpLevel RETURN NUMBER IS
     --
     vCreditLine NUMBER;
@@ -371,9 +365,9 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   END GetContractIDFromCL;
   --
   --
-  ----------------------------------------------------
-  -- Procedure processamento da(s) linha(s) de detalhe do pedido de distribuição
-  ----------------------------------------------------
+  ----------------------------------------------------------------------------------------
+  -- Procedure processamento da(s) linha(s) de detalhe do pedido de distribuicao
+  ----------------------------------------------------------------------------------------
   PROCEDURE ProcessarRegistro IS
     --
     vTrack VARCHAR2(500);
@@ -442,7 +436,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     IF vCD_TIP_PED = 11 THEN
       --
       --
-      -- Criando Pedido para base e distribuição de crédito
+      -- Criando Pedido para base e distribuicao de credito
       --
       vTrack := 'WT2MX_SNN_ACCOUNTCORPLEVEL_INT.OrderCreditCorpLevelAcct()';
       --
@@ -483,7 +477,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pCD_GST         => vCD_GST,
         pCD_CTR_CLI     => vContrato,
         pCD_BAS         => vCD_BAS,
-        pCD_TP_LIN_CRD  => vProductCreditLineTypeID,
+        pCD_TP_LIN_CRD  => vCreditLineType,
         pDT_AGD         => vDt_Agd,
         pCD_MOE         => vCurrency,
         pTP_ACA         => vTP_ACA,
@@ -491,7 +485,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pNU_PED         => vNU_PED,
         pNU_PED_EXT     => vExtPed,
         pVL_PED_BAS     => vVL_PED_FIN_BAS,
-        pCardHolderList => vItemDist,
+        pCardHolderList => vCardHolderList,
         pID_MSG         => NULL,
         pID_REQ         => NULL,
         pNU_TRF_SNN     => vNU_TRF_SNN,
@@ -516,7 +510,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     ELSIF vCD_TIP_PED = 2 THEN
       --
       --
-      -- Criando Distribuição de crédito
+      -- Criando Distribuicao de credito
       --
       vTrack := 'WT2MX_SNN_ACCOUNTCORPLEVEL_INT.DistribToCardHoldersCustMngr()';
       --
@@ -524,7 +518,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pCD_GST         => vCD_GST,
         pCD_CTR_CLI     => vContrato,
         pCD_BAS         => vCD_BAS,
-        pCD_TP_LIN_CRD  => vProductCreditLineTypeID,
+        pCD_TP_LIN_CRD  => vCreditLineType,
         pDT_AGD         => vDt_Agd,
         pCD_MOE         => vCurrency,
         pTP_ACA         => vTP_ACA,
@@ -532,7 +526,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pNU_PED         => vNU_PED,
         pNU_PED_EXT     => vExtPed,
         pVL_PED_BAS     => vVL_PED_FIN_BAS,
-        pCardHolderList => vItemDist,
+        pCardHolderList => vCardHolderList,
         pID_MSG         => NULL,
         pID_REQ         => NULL,
         pNU_TRF_SNN     => vNU_TRF_SNN,
@@ -565,13 +559,13 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pCD_GST         => vCD_GST,
         pCD_CTR_CLI     => vContrato,
         pCD_BAS         => vCD_BAS,
-        pCD_TP_LIN_CRD  => vProductCreditLineTypeID,
+        pCD_TP_LIN_CRD  => vCreditLineType,
         pDT_AGD         => vDt_Agd,
         pCD_MOE         => vCurrency,
         pTP_ACA         => vTP_ACA,
         pVL_TOT_PED     => vVL_TOT_PED,
         pNU_PED         => vNU_PED,
-        pCardHolderList => vItemDist,
+        pCardHolderList => vCardHolderList,
         pNU_TRF_SNN     => vNU_TRF_SNN,
         pVL_SLD_BAS     => vVL_SLD_BAS,
         CUR_OUT         => vCUR_OUT,
@@ -593,7 +587,18 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       --    
     END IF;
     --
-    --    
+    --
+    vTrack := 'Update PTC_ITE_PED com numero NU_PED_SNN';
+    --
+    BEGIN
+      UPDATE PTC_ITE_PED
+      SET NU_PED_SNN = vNU_TRF_SNN
+      WHERE NU_PED = vNU_PED
+        AND CD_STA_TIP_ITM_PED = 100;
+    EXCEPTION
+      WHEN OTHERS THEN
+      RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
+    END;
   EXCEPTION
     WHEN OTHERS THEN
       --
@@ -620,9 +625,9 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   END ProcessarRegistro;
   --   
   --
-  ----------------------------------------------------
+  ----------------------------------------------------------------------------------------
   -- Procedure processamento do header do arquivo
-  ----------------------------------------------------
+  ----------------------------------------------------------------------------------------
   PROCEDURE FileHeader IS
     --
     vTrack         VARCHAR2(500);
@@ -670,10 +675,10 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
   END FileHeader;
   --
   --
-  ----------------------------------------------------
-  -- Procedure processamento da linha de autenticação do arquivo
-  ----------------------------------------------------
-  PROCEDURE FileAutentication IS
+  ----------------------------------------------------------------------------------------
+  -- Procedure processamento da linha de autenticacao do arquivo
+  ----------------------------------------------------------------------------------------
+  PROCEDURE FileAuthentication IS
     --
     vTrack         VARCHAR2(500);
     --
@@ -691,9 +696,9 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     vCD_BAS := WT2MX_MASSIVELOAD_MNG.gValores('Base').NumberValue;
     vCreditLineType := GetCreditLineFromCorpLevel;
     --
-    -- Verificac?o da Abrangencia do Gestor
+    -- Verificacao da Abrangencia do Gestor
     --
-    vTrack := 'Verificação da abrangência do Gestor - WTMX_CORPORATELEVEL_PKG.ManagerHierarchyValidate()';
+    vTrack := 'Verificacao da abrangência do Gestor - WTMX_CORPORATELEVEL_PKG.ManagerHierarchyValidate()';
     --
     WTMX_CORPORATELEVEL_PKG.ManagerHierarchyValidate(
       pCD_CSL         => NULL,
@@ -716,6 +721,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     END IF;
     --
     --
+    vNU_PED := NULL;
     vCD_USU_SOL := GetUserFromManager;
     vContrato := GetContractIDFromCL;
     --             
@@ -742,13 +748,13 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         );   
       END IF;                                    
       -- 
-  END FileAutentication;
+  END FileAuthentication;
   --
   --
-  ----------------------------------------------------
-  -- Procedure processamento do cabeçalho do pedido de distribuição
-  ----------------------------------------------------
-  PROCEDURE ProcessarCabecalhoPedidoDist IS
+  ----------------------------------------------------------------------------------------
+  -- Procedure processamento do cabecalho do pedido de distribuicao
+  ----------------------------------------------------------------------------------------
+  PROCEDURE ProcessOrderDetailHeader IS
     --
     vTrack         VARCHAR2(500);
     --
@@ -768,9 +774,9 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     vCD_TIP_PED := WT2MX_MASSIVELOAD_MNG.gValores('IndPedCredito').StringValue;
 
     IF vCD_TIP_PED = 1 THEN
-      vCD_TIP_PED := 11; -- Pedido para base e distribuic?o de credito
+      vCD_TIP_PED := 11; -- Pedido para base e distribuicao de credito
     ELSIF vCD_TIP_PED = 2 THEN
-      vCD_TIP_PED := 2;  -- Somente distribuic?o de credito
+      vCD_TIP_PED := 2;  -- Somente distribuicao de credito
     ELSIF vCD_TIP_PED = 3 THEN  
       vCD_TIP_PED := 12;  -- Recolhimento              
     END IF;
@@ -798,13 +804,13 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         );   
       END IF;                                    
       --   
-  END ProcessarCabecalhoPedidoDist;
+  END ProcessOrderDetailHeader;
   --
   --
-  ----------------------------------------------------
-  -- Procedure processamento da(s) linha(s) de detalhe do pedido de distribuição
-  ----------------------------------------------------
-  PROCEDURE ProcessarDetalheDistribuicao IS
+  ----------------------------------------------------------------------------------------
+  -- Procedure processamento da(s) linha(s) de detalhe do pedido de distribuicao
+  ----------------------------------------------------------------------------------------
+  PROCEDURE ProcessOrderDistribution IS
     --
     vTrack         VARCHAR2(500);
     --
@@ -820,12 +826,11 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
     vReturnCode := NULL;
 
     vCard := WT2MX_MASSIVELOAD_MNG.gValores('NroCartao').StringValue;
-    vTagNfcId := WT2MX_MASSIVELOAD_MNG.gValores('TagNfcId').StringValue; -- 1.22
-    vTagNfcNum := WT2MX_MASSIVELOAD_MNG.gValores('TagNfcNum').StringValue;  -- 1.25
+    vTagNfcId := WT2MX_MASSIVELOAD_MNG.gValores('TagNfcId').StringValue;
+    vTagNfcNum := WT2MX_MASSIVELOAD_MNG.gValores('TagNfcNum').StringValue;
     --
     --
-    -- 1.22 / 1.25 inicio
-    -- Se CARD_NUMBER não for informado, obter o cartão ativo a partir dos novos campos 
+    -- Se CARD_NUMBER nao for informado, obter o cartao ativo a partir dos novos campos 
     -- (TAG_NUMERICA ou TAG_HEXADECIMAL)
     GetCardFromTagNFC(
       PNU_CARD    => vCard,     
@@ -834,7 +839,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       pCOD_RET    => vReturnCode
     );
     --
-    vTrack := 'Se CARD_NUMBER não for informado pegar TAG_NUMERICA ou TAG_HEXADECIMAL - GetCardFromTagNFC';
+    vTrack := 'Se CARD_NUMBER nao for informado pegar TAG_NUMERICA ou TAG_HEXADECIMAL - GetCardFromTagNFC';
     --
     IF NVL(vReturnCode, 0) <> 0 THEN
       -- Manager incompatible with hierarchy
@@ -842,7 +847,6 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       --
     END IF;
     --
-    -- 1.22 / 1.25 fim
     --
     vValue := NVL(WT2MX_MASSIVELOAD_MNG.gValores('Valor').NumberValue, 0);
     vCreditType := WT2MX_MASSIVELOAD_MNG.gValores('TpCredito').NumberValue;              
@@ -851,11 +855,11 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       --
       -- verifica duplicidade
       --
-      vTrack := 'Numero do cartão duplicado no arquivo';
+      vTrack := 'Numero do cartao duplicado no arquivo';
       --
       IF DBMS_LOB.instr(vItemDist, vCard) > 0 THEN
         --
-        vReturnCode := 182589;  -- Numero do cart?o duplicado no arquivo
+        vReturnCode := 182589;  -- Numero do cartao duplicado no arquivo
         RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
         --
       END IF;
@@ -870,15 +874,15 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
           INTO vCardType
         FROM PTC_CAT   CAT
         WHERE CAT.NU_CAT = vCard;
-      EXCEPTION -- 1.01
+      EXCEPTION
         WHEN NO_DATA_FOUND THEN
           vReturnCode := 182297;
           RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
       END; 
       --
-      IF vCardType = 4 THEN  -- Caso seja cart?o estoque deve recuperar o cart?o de operac?o
+      IF vCardType = 4 THEN  -- Caso seja cartao estoque deve recuperar o cartao de operacao
         --
-        -- Busca o cart?o de operac?o do cart?o informado (quando houver)
+        -- Busca o cartao de operacao do cartao informado (quando houver)
         WTMX_CARD_PKG.CardGetOperationCardList(
           CARDLIST  => vCard,
           STARTPAGE => NULL,
@@ -888,7 +892,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         --
         FETCH vCurOut INTO vCardOperationList;
         --
-        vTrack := 'Cartão inválido - Cartão de estoque deve recuperar o cartão da operação';
+        vTrack := 'Cartao invalido - Cartao de estoque deve recuperar o cartao da operacao';
         --
         IF vCardOperationList.NU_CAT_OPE IS NOT NULL THEN
           --
@@ -912,22 +916,22 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         FROM PTC_CAT   C
         WHERE C.NU_CAT = vCard;
         --
-      EXCEPTION                   -- 1.12
-          WHEN NO_DATA_FOUND THEN  -- 1.12
-            vCardStatus := NULL;   -- 1.12
+      EXCEPTION
+          WHEN NO_DATA_FOUND THEN
+            vCardStatus := NULL;
       END;
       --
       vTrack := 'OperationClass = BYPASS';
       --
-      IF vCD_TIP_PED = 12 THEN -- 1.15
+      IF vCD_TIP_PED = 12 THEN
         vOperationClass := 'PICKINGUP';
       ELSE  
         --
-        IF  vValue > 0 AND vCardStatus IS NOT NULL THEN -- 1.12 ref. vCardStatus
+        IF  vValue > 0 AND vCardStatus IS NOT NULL THEN
           --
           vOperationClass := 'DISBURSEMENT';
           --
-          vTrack := 'Status do Cartão 6';
+          vTrack := 'Status do Cartao 6';
           --
           IF vCardStatus = 6 THEN
             --
@@ -936,18 +940,16 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
             --
           END IF;
           --
-        ELSIF (vValue < 0 AND vCardStatus IS NOT NULL) OR  -- 1.12 ref. vCardStatus  
-              (vValue = 0 AND vCardStatus IS NOT NULL AND vCreditType = 2) THEN -- 1.17 recolhimento qdo relativo NONACCUM
+        ELSIF (vValue < 0 AND vCardStatus IS NOT NULL) OR
+              (vValue = 0 AND vCardStatus IS NOT NULL AND vCreditType = 2) THEN
           --
           vOperationClass := 'PICKINGUP';
           --
         ELSE
           --
           vOperationClass := 'BYPASS'; 
-          -- 1.17 (inicio)
           vReturnCode := 180491;
           RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
-          -- 1.17 (fim)
         END IF;
         --
       END IF;
@@ -959,7 +961,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       vFinancialInd := 'T';
       --
       vCreditType := WT2MX_MASSIVELOAD_MNG.gValores('TpCredito').NumberValue;
-      vUnitType := NVL(WT2MX_MASSIVELOAD_MNG.gValores('TpDistribuicao').NumberValue, 1); -- 1.14
+      vUnitType := NVL(WT2MX_MASSIVELOAD_MNG.gValores('TpDistribuicao').NumberValue, 1);
       vMerchandise := WT2MX_MASSIVELOAD_MNG.gValores('Mercadoria').NumberValue;
       vMerchQuantity := WT2MX_MASSIVELOAD_MNG.gValores('QtdMercadoria').NumberValue;
       vMerchPrice := WT2MX_MASSIVELOAD_MNG.gValores('PrecoMercadoria').NumberValue;
@@ -968,9 +970,7 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
       vCardBalance := WT2MX_MASSIVELOAD_MNG.gValores('SaldoCartao').NumberValue;
       vRoute := WT2MX_MASSIVELOAD_MNG.gValores('Rota').StringValue;
       vCurrency := WTMX_MASSIVELOAD_PKG.GetCurrencyIDParameter();
-      --vCardHolder := WTMX_MASSIVELOAD_PKG.GetContentNumber('Portador', WTMX_MASSIVELOAD_PKG.vLines(WT_MASSIVELOAD_PKG.gFile.NU_REG)); -- 1.2
-      --
-      -- 1.22 inicio
+
       BEGIN
         SELECT CAT.CD_PTD
           INTO vCardHolder
@@ -982,14 +982,11 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
           vCardHolder := NULL;
           --
       END;
-      -- 1.22 fim      
-      --
-      vKM_Quantity := WT2MX_MASSIVELOAD_MNG.gValores('QtdKM').NumberValue; -- 1.14
-      vNU_RND := WT2MX_MASSIVELOAD_MNG.gValores('Rendimento').NumberValue; -- 1.14    
+
+      vKM_Quantity := WT2MX_MASSIVELOAD_MNG.gValores('QtdKM').NumberValue;
+      vNU_RND := WT2MX_MASSIVELOAD_MNG.gValores('Rendimento').NumberValue;
       --
 
-      -- Valida infors x tipo NV -- 1.14
-      --
       vTrack := 'Valida infors x tipo NV';
       --      
       IF (vUnitType = 1 AND  (vKM_Quantity IS NOT NULL OR vNU_RND IS NOT NULL)) OR
@@ -1001,18 +998,18 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
           --                  
       END IF;
 
-      -- Valida se portador NÃO está associado a uma controle de Nota Vale
+      -- Valida se portador NAO esta associado a um controle de Nota Vale
       --
-      vTrack := 'Valida se portador NÃO está associado a uma controle de Nota Vale';
+      vTrack := 'Valida se portador NAO esta associado a uma controle de Nota Vale';
       --
-      IF WT_ORDER_PKG.ISCardHolderPreAutorization(NULL, vCardHolder) = 'T' THEN -- 1.13
+      IF WT_ORDER_PKG.ISCardHolderPreAutorization(NULL, vCardHolder) = 'T' THEN
         --                  
         vReturnCode := 182542; -- Cardholder is associated a PreAuthorization CardGroup
         RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
         --                  
       END IF;        
       
-      IF vMerchandise IS NOT NULL THEN -- 1.01
+      IF vMerchandise IS NOT NULL THEN
         SELECT M.CD_UND_MRD
           INTO vMerchUnit
         FROM PTC_MRD M
@@ -1036,20 +1033,29 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
                     TO_CLOB(vMerchQuantity)  || ';' ||  
                     TO_CLOB(vMerchPrice)     || ';' ||  
                     TO_CLOB(vAdditionalInfo) || ';' ||  
-                    TO_CLOB(vExpirationDate) || ';' ||  
+                    TO_CLOB(TO_CHAR(vExpirationDate, 'dd/mm/yyyy')) || ';' ||  
                     TO_CLOB(vCardBalance)    || ';' ||  
                     TO_CLOB(vRoute)          || ';' ||  
-                    TO_CLOB(vKM_Quantity)    || ';' ||  -- 1.14
-                    TO_CLOB(vNU_RND)         || ';' ||  -- 1.14
+                    TO_CLOB(vKM_Quantity)    || ';' ||
+                    TO_CLOB(vNU_RND)         || ';' ||
                     TO_CLOB(vMerchUnit);
+      
+      vCardHolderList := vCardHolderList ||
+          TO_CLOB(vCard) || ';' ||
+          TO_CLOB(vValue) || ';' ||
+          TO_CLOB(vCreditType) || ';' ||
+          TO_CLOB(vMerchandise) || ';' ||
+          TO_CLOB(vMerchQuantity) || ';' ||
+          TO_CLOB(vAdditionalInfo) || ';' ||
+          TO_CLOB(TO_CHAR(vExpirationDate, 'dd/mm/yyyy')) || ';' ||
+          TO_CLOB(vMerchUnit) || ';';
     END IF;
     --
     vReturnCode := NULL;
-    -- vFinancialInd := NULL; -- 1.01
     --
     --
     ---------------------------------------------------------
-    vTrack:= 'verificar se é ultima linha do registro detalhe';
+    vTrack:= 'verificar se e ultima linha do registro detalhe';
     --
     IF WT2MX_MASSIVELOAD_MNG.RegisterLastLine(PNU_REG => WT2MX_MASSIVELOAD_MNG.gFile.NU_REG) = WT2MX_MASSIVELOAD_MNG.gFile.NU_REG THEN
       --
@@ -1083,6 +1089,6 @@ CREATE OR REPLACE PACKAGE BODY WT2MX_MSS_CREDIT_ORDER_PKG  IS
         );   
       END IF;                                    
       -- 
-  END ProcessarDetalheDistribuicao;
+  END ProcessOrderDistribution;
 
 END WT2MX_MSS_CREDIT_ORDER_PKG;
