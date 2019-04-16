@@ -1107,7 +1107,7 @@ PROCEDURE P_ANALISE_MSS(PCD_ARQ_TKT TKT_ARQ.CD_ARQ%TYPE,
             FOR CAR IN (
                 SELECT C.NU_REG, C.VL_CTD CARTAO, C1.VL_CTD TAGNFCNUM, C2.VL_CTD TAGNFCID
                 FROM MX_ADM.PTC_MSS_CTD C, MX_ADM.PTC_MSS_CTD C1, MX_ADM.PTC_MSS_CTD C2
-                WHERE C.cd_arq = 177
+                WHERE C.cd_arq = ARQ.arq_cms
                 AND C.CD_MDL_CTD =
                     (select CD_MDL_CTD
                         from MX_ADM.PTC_MSS_MDL_CTD
@@ -1115,7 +1115,7 @@ PROCEDURE P_ANALISE_MSS(PCD_ARQ_TKT TKT_ARQ.CD_ARQ%TYPE,
                                                 from MX_ADM.PTC_MSS_MDL_REG
                                             where cd_mdl_arq = 803)
                         and ds_ctd = 'CARD_NUMBER')
-                AND C1.cd_arq = 177
+                AND C1.cd_arq = ARQ.arq_cms
                 AND C1.NU_REG = C.NU_REG
                 AND C1.CD_MDL_CTD =
                     (select CD_MDL_CTD
@@ -1124,7 +1124,7 @@ PROCEDURE P_ANALISE_MSS(PCD_ARQ_TKT TKT_ARQ.CD_ARQ%TYPE,
                                                 from MX_ADM.PTC_MSS_MDL_REG
                                             where cd_mdl_arq = 803)
                         and ds_ctd = 'DISTRIBUTION_TYPE')
-                AND C2.cd_arq = 177
+                AND C2.cd_arq = ARQ.arq_cms
                 AND C2.NU_REG = C.NU_REG
                 AND C2.CD_MDL_CTD =
                     (select CD_MDL_CTD

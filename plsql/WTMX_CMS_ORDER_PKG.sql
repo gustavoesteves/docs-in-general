@@ -238,10 +238,6 @@ CREATE OR REPLACE PACKAGE BODY WTMX_CMS_ORDER_PKG IS
                                 pCOD_RET    OUT NOCOPY NUMBER
                               ) IS
    --
-   vCard              PTC_CAT.NU_CAT%TYPE;                 
-   vIdTagNfc          PTC_DAD_VEI_EQP.ID_TAG_NFC%TYPE;
-   vNuTagNfc          PTC_DAD_VEI_EQP.NU_TAG_NFC%TYPE;
-   --
    EReturnError       EXCEPTION;
    --
    BEGIN

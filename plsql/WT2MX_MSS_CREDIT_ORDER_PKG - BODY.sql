@@ -78,10 +78,6 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
     pCOD_RET    OUT NOCOPY NUMBER
   ) IS
    --
-   vCard              PTC_CAT.NU_CAT%TYPE;                 
-   vIdTagNfc          PTC_DAD_VEI_EQP.ID_TAG_NFC%TYPE;
-   vNuTagNfc          PTC_DAD_VEI_EQP.NU_TAG_NFC%TYPE;
-   --
    EReturnError       EXCEPTION;
    --
   BEGIN
@@ -91,9 +87,9 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
       BEGIN
           SELECT CAT.NU_CAT, DVE.ID_TAG_NFC, DVE.NU_TAG_NFC
             INTO vCard,
-                vIdTagNfc,
-                vNuTagNfc
-            FROM PTC_CAT         CAT, 
+                vTagNfcId,
+                vTagNfcNum
+            FROM PTC_CAT        CAT, 
                 PTC_DAD_VEI_EQP DVE, 
                 PTC_VEI_EQP     VEI
           WHERE CAT.NU_CAT     = PNU_CARD
@@ -110,23 +106,23 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
       END;
       --
       -- Validar a TAG HEX, quando fornecido
-      IF NVL(PID_TAG_NFC,vIdTagNfc) <> vIdTagNfc OR
-        (vIdTagNfc IS NULL  AND PID_TAG_NFC IS NOT NULL)  THEN
+      IF NVL(PID_TAG_NFC, vTagNfcId) <> vTagNfcId OR
+        (vTagNfcId IS NULL  AND PID_TAG_NFC IS NOT NULL)  THEN
           pCOD_RET := 183156;  -- The hexadecimal tag is different from the one registered for the vehicle / card provided
           RETURN;
       END IF;
       --
-      IF NVL(PNU_TAG_NFC,vNuTagNfc) <> vNuTagNfc  THEN
+      IF NVL(PNU_TAG_NFC, vTagNfcNum) <> vTagNfcNum  THEN
           pCOD_RET := 183157;  -- Could not found Vehicle with numerical TAG informed.
           RETURN;
       END IF;
       --                
-    ELSIF PID_TAG_NFC IS NOT NULL THEN -- TAG Hexadecimal        
+    ELSIF PID_TAG_NFC IS NOT NULL THEN -- TAG Hexadecimal             
       --
       BEGIN -- Validacao da TAG Hexadecimal 
           SELECT CAT.NU_CAT, DVE.NU_TAG_NFC
             INTO vCard,
-                vNuTagNfc
+                vTagNfcNum
             FROM PTC_DAD_VEI_EQP DVE, 
                 PTC_VEI_EQP     VEI, 
                 PTC_CAT         CAT, 
@@ -145,10 +141,11 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
           RETURN;
       END;
       -- 
-      IF NVL(PNU_TAG_NFC,vNuTagNfc) <> vNuTagNfc  THEN
+      IF NVL(PNU_TAG_NFC, vTagNfcNum) <> vTagNfcNum THEN
           pCOD_RET := 183157; -- Could not found Vehicle with numerical TAG informed.
           RETURN;
       END IF;
+      --
     ELSIF PNU_TAG_NFC IS NOT NULL THEN -- TAG Numerica          
       --
       BEGIN -- Validacao da TAG Numerica 
@@ -179,7 +176,8 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
       --
     ELSE
       PNU_CARD  := vCard;
-    END IF; 
+    END IF;
+
   EXCEPTION
     WHEN OTHERS THEN
       pCOD_RET := 9999;
@@ -491,7 +489,7 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pNU_TRF_SNN     => vNU_TRF_SNN,
         pVL_SLD_BAS     => vVL_SLD_BAS,
         CUR_OUT         => vCUR_OUT,
-        pCOD_RET        => vCOD_RET,
+        pCOD_RET        => vReturnCode,
         CUR_ERR         => vCUR_ERR
       );
       --
@@ -532,7 +530,7 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pNU_TRF_SNN     => vNU_TRF_SNN,
         pVL_SLD_BAS     => vVL_SLD_BAS,
         CUR_OUT         => vCUR_OUT,
-        pCOD_RET        => vCOD_RET,
+        pCOD_RET        => vReturnCode,
         CUR_ERR         => vCUR_ERR
       );
       --
@@ -569,7 +567,7 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
         pNU_TRF_SNN     => vNU_TRF_SNN,
         pVL_SLD_BAS     => vVL_SLD_BAS,
         CUR_OUT         => vCUR_OUT,
-        pCOD_RET        => vCOD_RET,
+        pCOD_RET        => vReturnCode,
         CUR_ERR         => vCUR_ERR
       );
       --
@@ -847,7 +845,6 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
       --
     END IF;
     --
-    --
     vValue := NVL(WT2MX_MASSIVELOAD_MNG.gValores('Valor').NumberValue, 0);
     vCreditType := WT2MX_MASSIVELOAD_MNG.gValores('TpCredito').NumberValue;              
     --
@@ -1090,5 +1087,46 @@ CREATE OR REPLACE PACKAGE BODY MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG  IS
       END IF;                                    
       -- 
   END ProcessOrderDistribution;
+  --
+  --
+  ----------------------------------------------------------------------------------------
+  -- Procedure processamento da(s) linha(s) de detalhe do pedido de distribuicao
+  ----------------------------------------------------------------------------------------
+  PROCEDURE SetCardAndOrder IS
+    --
+    vTrack         VARCHAR2(500);
+    --
+    vUserMessage   VARCHAR2(500);
+    vReturnCode    NUMBER;
+    --
+  BEGIN
+    --
+    DBMS_APPLICATION_INFO.READ_MODULE(vModule, vAction);
+    DBMS_APPLICATION_INFO.SET_MODULE($$PLSQL_UNIT, 'ProcessarDetalheDistribuicao');
+    --
+    vCard := WT2MX_MASSIVELOAD_MNG.gValores('NroCartao').StringValue;
+    vTagNfcId := WT2MX_MASSIVELOAD_MNG.gValores('TagNfcId').StringValue;
+    vTagNfcNum := WT2MX_MASSIVELOAD_MNG.gValores('TagNfcNum').StringValue;
+    --
+    --
+    -- Se CARD_NUMBER nao for informado, obter o cartao ativo a partir dos novos campos 
+    -- (TAG_NUMERICA ou TAG_HEXADECIMAL)
+    GetCardFromTagNFC(
+      PNU_CARD    => vCard,     
+      PID_TAG_NFC => vTagNfcId,
+      PNU_TAG_NFC => vTagNfcNum,
+      pCOD_RET    => vReturnCode
+    );
+    --
+    vTrack := 'Se CARD_NUMBER nao for informado pegar TAG_NUMERICA ou TAG_HEXADECIMAL - GetCardFromTagNFC';
+    --
+    IF NVL(vReturnCode, 0) <> 0 THEN
+      -- Manager incompatible with hierarchy
+      RAISE WT2MX_MASSIVELOAD_MNG.EProcessError;
+      --
+    END IF;
+    --
+
+  END SetCardAndOrder;
 
 END WT2MX_MSS_CREDIT_ORDER_PKG;
