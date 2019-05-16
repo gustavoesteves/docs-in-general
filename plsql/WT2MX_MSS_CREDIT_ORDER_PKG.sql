@@ -46,4 +46,13 @@ CREATE OR REPLACE PACKAGE MX_ADM.WT2MX_MSS_CREDIT_ORDER_PKG IS
   PROCEDURE ProcessOrderDistribution;
   --
   --
+  ----------------------------------------------------------------------------------------
+  -- Procedure Grava o NUM_PEDIDO para o arquivo de resposta
+  ----------------------------------------------------------------------------------------
+  PROCEDURE SetOrderNumber(
+    PNREG       IN PTC_MSS_REG.NU_REG%TYPE, 
+    PCD_MDL_REG IN PTC_MSS_MDL_REG.CD_MDL_REG%TYPE
+  );
+  --
+  --
   END WT2MX_MSS_CREDIT_ORDER_PKG;
