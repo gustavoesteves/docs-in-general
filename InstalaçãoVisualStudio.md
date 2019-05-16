@@ -46,3 +46,7 @@
 * CURRENT_WATTSCOUNTRY_ENV: DES (QA, HOM...)
 * CURRENT_WATTSPATH: C:\GIT\EWTC
 * TNS_ADMIN: C:\oracle\product\10.2.0(instaled version)\client_1\network\ADMIN
+
+### Virtual Machine
+
+* SATKTSAO02TS12
