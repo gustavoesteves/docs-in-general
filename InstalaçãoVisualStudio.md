@@ -50,3 +50,6 @@
 ### Virtual Machine
 
 * SATKTSAO02TS12
+* https://jiracorp.stefanini.com/secure/RapidBoard.jspa?rapidView=344&selectedIssue=TWA-635&projectKey=TWA
+* https://outlook.office365.com/mail/inbox/id/AAQkADQ1YzRmYmI2LTNjMzItNDE2NC1iYzgwLWZlMzZhODJhNGM5NAAQAIpg0N3qNMVEvhpipI8EmFE%3D
+* http://devops-ci.lanet.accorservices.net/jenkins/job/WT_B/job/master_adm/
